@@ -28,21 +28,15 @@ class Device:
     def _create_visual_elements(self) -> None:
         """Create the visual elements of the device on the canvas."""
         if self._load_icon():
-            # Create image on canvas
             self.icon = self.canvas.create_image(
-                self.x, self.y,
-                image=self.image_ref,
+                self.x, self.y, image=self.image_ref, anchor='center',
                 tags=('device', 'draggable')
             )
         else:
             self._create_fallback_shape()
-
-        # Add device name below the icon
         self.name_text = self.canvas.create_text(
-            self.x,
-            self.y + self.ICON_SIZE//2 + 10,
-            text=self.config.name,
-            font=('Arial', 10),
+            self.x, self.y + self.ICON_SIZE // 2 + 10, 
+            text=self.config.name, 
             tags=('device', 'draggable')
         )
 
@@ -84,10 +78,13 @@ class Device:
         """Move the device by the specified delta."""
         self.x += dx
         self.y += dy
-        self.canvas.move(self.icon, dx, dy)
-        self.canvas.move(self.name_text, dx, dy)
-        if self.highlight_circle:
-            self.canvas.move(self.highlight_circle, dx, dy)
+        
+        # Move all visual elements
+        for item in [self.icon, self.name_text, self.highlight_circle]:
+            if item:
+                self.canvas.move(item, dx, dy)
+        
+        # Update connections
         for conn in self.connections:
             conn.update_position()
 
@@ -97,18 +94,24 @@ class Device:
 
     def contains(self, x: int, y: int) -> bool:
         """Check if the given point is within the device's bounds."""
+        if not self.icon:
+            return False
+            
         bbox = self.canvas.bbox(self.icon)
         if not bbox:
             return False
         
+        # Calculate center and radius
         center_x = (bbox[0] + bbox[2]) / 2
         center_y = (bbox[1] + bbox[3]) / 2
-        width = bbox[2] - bbox[0]
-        height = bbox[3] - bbox[1]
-        radius = max(width, height) / 2
         
-        distance = ((x - center_x) ** 2 + (y - center_y) ** 2) ** 0.5
-        return distance <= radius
+        # Use ICON_SIZE for consistent hit detection
+        radius = self.ICON_SIZE / 2
+        
+        # Check if point is within circular bounds
+        dx = x - center_x
+        dy = y - center_y
+        return (dx * dx + dy * dy) <= (radius * radius)
 
     def highlight(self, state: bool = True) -> None:
         """Highlight or unhighlight the device."""
@@ -144,7 +147,7 @@ class Device:
             self.canvas.delete(self.highlight_circle)
         
         # Delete all connections
-        for conn in self.connections[:]:  # Use slice copy to avoid modification during iteration
+        for conn in self.connections[:]:
             conn.delete()
 
     def update_appearance(self) -> None:

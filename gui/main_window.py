@@ -115,13 +115,13 @@ class NetworkTopologyGUI:
     def _load_topology(self, event=None) -> None:
         """Load a topology from a file."""
         # Implementation will be added with file handling utilities
+        pass
 
     def _save_topology(self, event=None) -> None:
         """Save the current topology to a file."""
         # Implementation will be added with file handling utilities
-        def _save_topology_as(self, event=None) -> None:
+        def _save_topology_as(event=None) -> None:
             """Save the current topology to a new file."""
-
             filename = filedialog.asksaveasfilename(
                 defaultextension=".ntd",
                 filetypes=[("Network Topology Designer files", "*.ntd"), ("All files", "*.*")]
@@ -142,9 +142,12 @@ class NetworkTopologyGUI:
                 messagebox.showinfo("Success", "Topology saved successfully.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save topology: {str(e)}")
+        _save_topology_as()
+
     def _export_topology(self, event=None) -> None:
         """Export the topology as an image."""
         # Implementation will be added with export utilities
+        pass
 
     # Edit operations
     def _delete_selected(self, event=None) -> None:
@@ -180,11 +183,22 @@ class NetworkTopologyGUI:
     # Device operations
     def _show_add_device_dialog(self) -> None:
         """Show dialog for adding a new device."""
-        # Implementation will be added with dialog utilities
+        from .dialogs import DeviceDialog
+        def on_device_added(config):
+            from models.device import Device
+            # Pass the canvas object from canvas_panel instead of 100.
+            device = Device(self.canvas_panel.canvas, 100, 100, config)
+            self.canvas_panel.add_device(device)
+
+        dialog = DeviceDialog(self.root, on_device_added)
+        self.root.wait_window(dialog)
+
 
     def _show_bulk_add_dialog(self) -> None:
         """Show dialog for bulk adding devices."""
-        # Implementation will be added with dialog utilities
+        from tkinter import messagebox
+        # For now, simply show a message that bulk add is not implemented.
+        messagebox.showinfo("Bulk Add", "Bulk add functionality is not implemented yet.")
 
     def _show_device_properties(self, device: Device) -> None:
         """Show properties for the selected device."""
@@ -193,7 +207,14 @@ class NetworkTopologyGUI:
     # Boundary operations
     def _show_add_boundary_dialog(self) -> None:
         """Show dialog for adding a new boundary."""
-        # Implementation will be added with dialog utilities
+        from .dialogs import BoundaryDialog
+        def on_boundary_added(config):
+            from models.boundary import Boundary
+            # Create a new Boundary using the configuration from the dialog.
+            boundary = Boundary(config)
+            self.canvas_panel.add_boundary(boundary)
+        dialog = BoundaryDialog(self.root, on_boundary_added)
+        self.root.wait_window(dialog)
 
     def _show_boundary_properties(self, boundary: Boundary) -> None:
         """Show properties for the selected boundary."""
@@ -207,6 +228,7 @@ class NetworkTopologyGUI:
     def _create_connection(self, device1: Device, device2: Device) -> None:
         """Create a connection between two devices."""
         # Implementation will be added with connection dialog
+        pass
 
     # Help operations
     def _show_about_dialog(self) -> None:
