@@ -1,6 +1,7 @@
+from typing import Dict, Any
 import tkinter as tk
-from tkinter import ttk, messagebox
-from typing import Dict, Optional, Any
+from tkinter import Tk, Frame, Menu, ttk, messagebox, filedialog, BOTH, LEFT, TOP, X, Y
+from typing import Optional, Callable
 
 from .menu_bar import MenuBar
 from .toolbar import Toolbar
@@ -9,29 +10,28 @@ from .properties_panel import PropertiesPanel
 
 from models.device import Device
 from models.boundary import Boundary
-from models.connection import Connection, ConnectionType
-from tkinter import filedialog
+from models.connection import Connection
+from models.enums import ConnectionType
+from models.config import DeviceConfig, BoundaryConfig
 import json
 
-class NetworkTopologyGUI:
-    """Main window of the Network Topology Designer application."""
+class DeviceConfig:
+    def __init__(self, name: str, device_type: str):
+        self.name = name
+        self.device_type = device_type
 
-    def __init__(self, root: tk.Tk):
-        """Initialize the main window."""
+class BoundaryConfig:
+    def __init__(self, name: str, boundary_type: str):
+        self.name = name
+        self.boundary_type = boundary_type
+
+class NetworkTopologyGUI:
+    """Main application window class."""
+
+    def __init__(self, root: Tk):
         self.root = root
-        
-        # Create main container
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Initialize callback registry
-        self.callbacks = self._create_callbacks()
-        
-        # Create GUI components
-        self._create_components()
-        
-        # Bind keyboard shortcuts
-        self._bind_shortcuts()
+        self._create_widgets()
+        self._create_menu()
 
     def _create_callbacks(self) -> Dict[str, Any]:
         """Create callback registry for GUI components."""
@@ -68,11 +68,26 @@ class NetworkTopologyGUI:
             'show_about': self._show_about_dialog
         }
 
+    def _create_widgets(self) -> None:
+        """Create and arrange the main GUI widgets."""
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill=BOTH, expand=True)
+        
+        # Initialize callback registry
+        self.callbacks = self._create_callbacks()
+        
+        # Create GUI components
+        self._create_components()
+        
+        # Bind keyboard shortcuts
+        self._bind_shortcuts()
+
+    def _create_menu(self) -> None:
+        """Create and initialize the menu bar."""
+        self.menu_bar = MenuBar(self.root, self.callbacks)
+
     def _create_components(self) -> None:
         """Create and initialize all GUI components."""
-        # Create menu bar
-        self.menu_bar = MenuBar(self.root, self.callbacks)
-        
         # Create toolbar
         self.toolbar = Toolbar(self.main_frame, self.callbacks)
         
@@ -209,12 +224,26 @@ class NetworkTopologyGUI:
         """Show dialog for adding a new boundary."""
         from .dialogs import BoundaryDialog
         def on_boundary_added(config):
-            from models.boundary import Boundary
-            # Create a new Boundary using the configuration from the dialog.
-            boundary = Boundary(config)
-            self.canvas_panel.add_boundary(boundary)
+            self.on_boundary_added(config)
         dialog = BoundaryDialog(self.root, on_boundary_added)
         self.root.wait_window(dialog)
+
+    def on_boundary_added(self, config: BoundaryConfig) -> None:
+        """Handle boundary creation."""
+        x = 100
+        y = 100
+        width = 200
+        height = 150
+        
+        boundary = Boundary(
+            canvas=self.canvas_panel.canvas,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            config=config
+        )
+        self.canvas_panel.add_boundary(boundary)
 
     def _show_boundary_properties(self, boundary: Boundary) -> None:
         """Show properties for the selected boundary."""

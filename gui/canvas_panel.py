@@ -216,17 +216,54 @@ class CanvasPanel:
         self.canvas.config(cursor="")
 
     def _resize_start(self, event: tk.Event) -> None:
-        """Define what happens when the resize handle is clicked."""
-        print("Resize started")
+        """Start boundary resizing operation."""
+        item = self.canvas.find_closest(event.x, event.y)[0]
+        for boundary in self.boundaries.values():
+            if item == boundary.resize_handle:
+                self.resizing_boundary = boundary
+                self.resize_start = (event.x, event.y)
+                break
 
-    def resizing_boundary(self, event):
-        """Define what happens when the boundary is resized."""
-        print("Boundary resizing")
+    def resizing_boundary(self, event: tk.Event) -> None:
+        """Handle boundary resizing during mouse motion."""
+        if not self.resizing_boundary or not self.resize_start:
+            return
+
+        # Calculate change in position
+        dx = event.x - self.resize_start[0]
+        dy = event.y - self.resize_start[1]
+
+        # Update boundary size
+        self.resizing_boundary.resize(dx, dy)
+        
+        # Update start position for next movement
+        self.resize_start = (event.x, event.y)
+        
+        # Update which devices are contained in the boundary
+        self._update_boundary_devices()
 
     def _resize_stop(self, event: tk.Event) -> None:
-        """Define what happens when the resize handle is released."""
-        print("Resize stopped")
+        """End boundary resizing operation."""
+        if self.resizing_boundary:
+            self.resizing_boundary = None
+            self.resize_start = None
 
-    def _mouse_wheel_zoom(self, event):
-        """Define what happens when the mouse wheel is used for zooming."""
-        print("Mouse wheel zoom")
+    def _mouse_wheel_zoom(self, event: tk.Event) -> None:
+        """Handle mouse wheel zoom events."""
+        # Get the current scale
+        current_scale = self.canvas.scale("all", 0, 0, 1, 1)
+        
+        # Define zoom factor (adjust these values to change zoom sensitivity)
+        zoom_factor = 1.1 if event.delta > 0 else 0.9
+        
+        # Get the point to zoom around (mouse position)
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        
+        # Apply zoom
+        self.canvas.scale("all", x, y, zoom_factor, zoom_factor)
+        
+        # Update scroll region
+        bbox = self.canvas.bbox("all")
+        if bbox:
+            self.canvas.configure(scrollregion=bbox)

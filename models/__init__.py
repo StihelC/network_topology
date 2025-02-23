@@ -1,14 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
-
-class ConnectionType(Enum):
-    ETHERNET = "ethernet"
-    FIBER = "fiber"
-    WIRELESS = "wireless"
-    VPN = "vpn"
-    SERIAL = "serial"
-    USB = "usb"
+from .config import DeviceConfig, BoundaryConfig
+from .enums import ConnectionType
+from .device import Device
+from .boundary import Boundary
+from .connection import Connection
 
 @dataclass
 class DeviceConfig:

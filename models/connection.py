@@ -1,7 +1,9 @@
-import tkinter as tk
-from typing import Dict, Tuple, Optional
-from models import ConnectionType
-from models.device import Device
+from typing import Dict, Tuple, Optional, TYPE_CHECKING
+from models.enums import ConnectionType
+
+if TYPE_CHECKING:
+    from .device import Device
+    import tkinter as tk
 
 class Connection:
     """Represents a connection between two network devices."""
@@ -15,8 +17,8 @@ class Connection:
         ConnectionType.USB: {'dash': (4, 2), 'width': 1, 'color': '#795548'}
     }
 
-    def __init__(self, canvas: tk.Canvas, device1: 'Device', device2: 'Device', 
-                 connection_type: ConnectionType = ConnectionType.ETHERNET):
+    def __init__(self, canvas: 'tk.Canvas', device1: 'Device', 
+                 device2: 'Device', connection_type: ConnectionType):
         """Initialize a new connection between two devices."""
         self.canvas = canvas
         self.device1 = device1
@@ -36,20 +38,40 @@ class Connection:
         x2, y2 = self.device2.get_position()
         style = self.LINE_STYLES[self.connection_type]
         
+        # Create line with specified style
         self.line = self.canvas.create_line(
             x1, y1, x2, y2,
             fill=style['color'],
             width=style['width'],
-            dash=style['dash']
+            dash=style['dash'],
+            tags='connection'  # Add tag for easier management
         )
-        self.canvas.tag_lower(self.line)  # Put line behind devices
+        
+        # Ensure line is below devices but above background
+        self.canvas.tag_lower(self.line)
+        
+        # Update line position to match device centers
+        self.update_position()
 
     def update_position(self) -> None:
         """Update the position of the connection line."""
         if self.line:
+            # Get center positions of both devices
             x1, y1 = self.device1.get_position()
             x2, y2 = self.device2.get_position()
+            
+            # Adjust positions to device centers
+            x1 += self.device1.ICON_SIZE // 2
+            y1 += self.device1.ICON_SIZE // 2
+            x2 += self.device2.ICON_SIZE // 2
+            y2 += self.device2.ICON_SIZE // 2
+            
+            # Update line coordinates
             self.canvas.coords(self.line, x1, y1, x2, y2)
+            
+            # Ensure line remains visible
+            self.canvas.tag_raise(self.line)  # Raise above background
+            self.canvas.tag_lower(self.line, 'device')  # Lower below devices
 
     def delete(self) -> None:
         """Delete the connection and remove it from connected devices."""

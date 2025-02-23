@@ -14,11 +14,11 @@ class Boundary:
         self.canvas = canvas
         self.x = x
         self.y = y
-        self.width = max(width, self.MIN_WIDTH)
-        self.height = max(height, self.MIN_HEIGHT)
+        self.width = width
+        self.height = height
         self.config = config
-        self.selected = False
-        self.contained_devices: Set[Device] = set()
+        self.contained_devices = []
+        self._create_visual_elements()
         
         # Canvas elements
         self.boundary: Optional[int] = None

@@ -1,17 +1,25 @@
+#region Imports
+from typing import List, Optional, Tuple
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
-from typing import List, Tuple, Optional, TYPE_CHECKING
+import math
+from typing import TYPE_CHECKING
 from models import DeviceConfig
 
 if TYPE_CHECKING:
     from models.connection import Connection
+#endregion
 
+#region Device Class
 class Device:
-    """Represents a network device with its visual representation."""
+    """Represents a network device."""
     
+    #region Constants
     ICON_SIZE = 60
+    #endregion
     
+    #region Initialization
     def __init__(self, canvas: tk.Canvas, x: int, y: int, config: DeviceConfig):
         self.canvas = canvas
         self.x = x
@@ -24,6 +32,12 @@ class Device:
         self.name_text: Optional[int] = None
         self.highlight_circle: Optional[int] = None
         self._create_visual_elements()
+    #endregion
+    
+    #region Private Methods
+    def _initialize(self):
+        """Initialize device attributes."""
+        pass
 
     def _create_visual_elements(self) -> None:
         """Create the visual elements of the device on the canvas."""
@@ -73,6 +87,7 @@ class Device:
             width=2,
             tags=('device', 'draggable')
         )
+    #endregion
 
     def move(self, dx: int, dy: int) -> None:
         """Move the device by the specified delta."""
@@ -89,7 +104,12 @@ class Device:
             conn.update_position()
 
     def get_position(self) -> Tuple[int, int]:
-        """Get the current position of the device."""
+        """Get the current center position of the device."""
+        bbox = self.canvas.bbox(self.icon)
+        if bbox:
+            center_x = (bbox[0] + bbox[2]) // 2
+            center_y = (bbox[1] + bbox[3]) // 2
+            return (center_x, center_y)
         return (self.x, self.y)
 
     def contains(self, x: int, y: int) -> bool:
@@ -159,3 +179,37 @@ class Device:
             self._load_icon()
             if self.image_ref:
                 self.canvas.itemconfig(self.icon, image=self.image_ref)
+
+    def get_connection_point(self, target_x: int, target_y: int) -> Tuple[float, float]:
+        """Calculate the point where a connection line should meet the device icon."""
+        if not self.icon:
+            return (self.x, self.y)
+        
+        # Calculate angle and intersection with icon border
+        dx = target_x - self.x
+        dy = target_y - self.y
+        angle = math.atan2(dy, dx)
+        
+        # Use radius as half of ICON_SIZE
+        radius = self.ICON_SIZE / 2
+        intersection_x = self.x + radius * math.cos(angle)
+        intersection_y = self.y + radius * math.sin(angle)
+        
+        return (intersection_x, intersection_y)
+
+    def get_info(self) -> dict:
+        """Return a dictionary with device information."""
+        return {
+            'name': self.config.name,
+            'type': self.config.device_type,
+            'position': (self.x, self.y),
+            'connections': len(self.connections)
+        }
+
+    def center_name(self) -> None:
+        """Center the device name below the icon."""
+        if self.name_text:
+            self.canvas.coords(self.name_text, 
+                                self.x, 
+                                self.y + self.ICON_SIZE // 2 + 10)
+#endregion
